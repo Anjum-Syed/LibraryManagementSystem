@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Library Management System</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #f2f2f2;
+            text-align: center;
+        }
+
+        input, button {
+            padding: 10px;
+            margin: 5px;
+        }
+
+        table {
+            margin: auto;
+            background: white;
+            border-collapse: collapse;
+        }
+
+        td, th {
+            padding: 12px;
+            border: 1px solid black;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Library Management System</h1>
+
+    <input id="title" placeholder="Book Title">
+    <input id="author" placeholder="Author">
+
+    <button onclick="addBook()">Add Book</button>
+
+    <br><br>
+
+    <input id="search" placeholder="Search Book"
+           onkeyup="displayBooks()">
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody id="bookList"></tbody>
+    </table>
+
+    <script>
+        const API = "/books";
+
+        async function displayBooks() {
+            const res = await fetch(API);
+            const books = await res.json();
+
+            const search = document.getElementById("search")
+                .value.toLowerCase();
+
+            const list = document.getElementById("bookList");
+            list.innerHTML = "";
+
+            books.filter(b =>
+                b.title.toLowerCase().includes(search)
+            ).forEach(b => {
+                list.innerHTML += `
+                    <tr>
+                        <td>${b.id}</td>
+                        <td>${b.title}</td>
+                        <td>${b.author}</td>
+                        <td>
+                            <button onclick="editBook(${b.id},
+                                '${b.title}', '${b.author}')">
+                                Edit
+                            </button>
+
+                            <button onclick="deleteBook(${b.id})">
+                                Delete
+                            </button>
+                        </td>
+                    </tr>`;
+            });
+        }
+
+        async function addBook() {
+            const title = document.getElementById("title").value;
+            const author = document.getElementById("author").value;
+
+            if (!title || !author) {
+                alert("Enter book details");
+                return;
+            }
+
+            await fetch(API, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ title, author })
+            });
+
+            document.getElementById("title").value = "";
+            document.getElementById("author").value = "";
+
+            displayBooks();
+        }
+
+        async function editBook(id, oldTitle, oldAuthor) {
+            const title = prompt("Enter new title", oldTitle);
+            const author = prompt("Enter new author", oldAuthor);
+
+            if (title && author) {
+                await fetch(API + "/" + id, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ title, author })
+                });
+
+                displayBooks();
+            }
+        }
+
+        async function deleteBook(id) {
+            await fetch(API + "/" + id, {
+                method: "DELETE"
+            });
+
+            displayBooks();
+        }
+
+        displayBooks();
+    </script>
+
+</body>
+</html>
